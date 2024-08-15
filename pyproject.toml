@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "azureaether"  # REQUIRED, is the only field that cannot be marked as dynamic.
+dynamic = ["version"]
+description = "Bluesky experimentation"
+
+dependencies = [
+  "bluesky",
+  "ophyd-async[ca]",
+  "ibex-bluesky-core@git+https://github.com/IsisComputingGroup/ibex_bluesky_core@10_add_block_signals",
+]
+
+[tool.setuptools_scm]
