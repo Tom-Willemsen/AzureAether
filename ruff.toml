@@ -1,0 +1,25 @@
+line-length = 100
+indent-width = 4
+
+[lint]
+extend-select = [
+    "N",     # pep8-naming
+    "I",     # isort (for imports)
+    "E501",  # Line too long ({width} > {limit})
+    "E",
+    "F",
+	"W",
+	"ASYNC", # Asyncio-specific checks
+	"B",
+	"NPY",   # Numpy-specific rules
+	"RUF",   # Ruff-specific checks, include some useful asyncio rules
+]
+ignore = [
+    "D406",    # Section name should end with a newline ("{name}")
+    "D407",    # Missing dashed underline after section ("{name}")
+	"D213",    # Incompatible with D212
+	"D203",    # Incompatible with D211
+]
+
+[lint.pep8-naming]
+extend-ignore-names = ["RE"]  # Conventional name used for RunEngine

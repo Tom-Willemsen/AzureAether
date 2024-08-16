@@ -13,4 +13,9 @@ dependencies = [
   "ibex-bluesky-core@git+https://github.com/IsisComputingGroup/ibex_bluesky_core@10_add_block_signals",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "ruff",
+]
+
 [tool.setuptools_scm]
