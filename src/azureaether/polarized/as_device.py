@@ -4,16 +4,16 @@ import time
 
 import bluesky.plans as bp
 from bluesky.callbacks import LiveTable
-from bluesky.protocols import Hints, Reading
+from bluesky.protocols import Hints, Reading, Triggerable
 from event_model import DataKey
 from ibex_bluesky_core.devices import get_pv_prefix
 from ibex_bluesky_core.devices.block import BlockRw, block_rw
 from ibex_bluesky_core.devices.dae import Dae
-from ophyd_async.core import AsyncStatus, StandardReadable
+from ophyd_async.core import AsyncStageable, AsyncStatus, StandardReadable
 from ophyd_async.plan_stubs import ensure_connected
 
 
-class Polarization(StandardReadable):
+class Polarization(StandardReadable, Triggerable, AsyncStageable):
     def __init__(self, prefix: str, name: str = "", flipper_block: str = "flipper"):
         self._pol_up_run: int | None = None
         self._pol_up_intensity: float | None = None

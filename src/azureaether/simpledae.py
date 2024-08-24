@@ -11,7 +11,7 @@ class SimpleDae(Dae):
     @AsyncStatus.wrap
     async def trigger(self) -> None:
         await self.begin_run.trigger(wait=True, timeout=None)
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
         await self.end_run.trigger(wait=True, timeout=None)
 
     async def read(self) -> dict[str, Reading]:

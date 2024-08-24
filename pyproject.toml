@@ -9,8 +9,10 @@ description = "Bluesky experimentation"
 
 dependencies = [
   "bluesky",
-  "ophyd-async[ca]",
-  "ibex-bluesky-core@git+https://github.com/IsisComputingGroup/ibex_bluesky_core@10_add_block_signals",
+  "ophyd-async[ca]@git+https://github.com/bluesky/ophyd-async@main",
+  "ibex-bluesky-core@git+https://github.com/IsisComputingGroup/ibex_bluesky_core@main",
+  "scipp",
+  "numpy",
 ]
 
 [project.optional-dependencies]
