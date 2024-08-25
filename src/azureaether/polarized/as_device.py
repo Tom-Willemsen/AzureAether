@@ -1,29 +1,36 @@
 import asyncio
-import random
-import time
 
 import bluesky.plans as bp
 from bluesky.callbacks import LiveTable
-from bluesky.protocols import Hints, Reading, Triggerable
-from event_model import DataKey
+from bluesky.protocols import Triggerable
 from ibex_bluesky_core.devices import get_pv_prefix
 from ibex_bluesky_core.devices.block import BlockRw, block_rw
 from ibex_bluesky_core.devices.dae import Dae
-from ophyd_async.core import AsyncStageable, AsyncStatus, StandardReadable
+from ophyd_async.core import (
+    AsyncStatus,
+    HintedSignal,
+    StandardReadable,
+    soft_signal_rw,
+)
 from ophyd_async.plan_stubs import ensure_connected
 
 
-class Polarization(StandardReadable, Triggerable, AsyncStageable):
+class Polarization(StandardReadable, Triggerable):
     def __init__(self, prefix: str, name: str = "", flipper_block: str = "flipper"):
-        self._pol_up_run: int | None = None
-        self._pol_up_intensity: float | None = None
-        self._pol_down_run: int | None = None
-        self._pol_down_intensity: float | None = None
-
         self.dae = Dae(prefix)
         self.flipper = BlockRw(int, prefix, flipper_block)
 
+        with self.add_children_as_readables(HintedSignal):
+            self.polarization = soft_signal_rw(float, 0.0, precision=6)
+
+        with self.add_children_as_readables():
+            self.up_run = soft_signal_rw(int, 0)
+            self.down_run = soft_signal_rw(int, 0)
+            self.up = soft_signal_rw(float, 0.0)
+            self.down = soft_signal_rw(float, 0.0)
+
         super().__init__(name=name)
+        self.polarization.set_name(name)
 
     async def _measure_one_pol(self) -> (int, float):
         await self.dae.begin_run.trigger()
@@ -33,59 +40,24 @@ class Polarization(StandardReadable, Triggerable, AsyncStageable):
         return await asyncio.gather(self.dae.good_uah.get_value(), self.dae.good_uah.get_value())
 
     @AsyncStatus.wrap
-    async def trigger(self):
-        await self.flipper.set(0)
+    async def trigger(self) -> None:
         # Measure "up"
-        self._pol_up_run, self._pol_up_intensity = await self._measure_one_pol()
-        self._pol_up_intensity *= random.random()
+        await self.flipper.set(0)
+        up_run, up_intensity = await self._measure_one_pol()
 
-        await self.flipper.set(1)
         # Measure "down"
-        self._pol_down_run, self._pol_down_intensity = await self._measure_one_pol()
-        self._pol_down_intensity *= random.random()
+        await self.flipper.set(1)
+        down_run, down_intensity = await self._measure_one_pol()
 
-    async def read(self) -> dict[str, Reading]:
-        assert self._pol_up_run is not None, "read() called before trigger(), no UP run"
-        assert self._pol_down_run is not None, "read() called before trigger(), no DOWN run"
-        return {
-            self.name: {
-                "value": (self._pol_up_intensity - self._pol_down_intensity)
-                / (self._pol_up_intensity + self._pol_down_intensity),
-                "timestamp": time.time(),
-            },
-            self.name + "-up": {
-                "value": self._pol_up_run,
-                "timestamp": time.time(),
-            },
-            self.name + "-down": {
-                "value": self._pol_down_run,
-                "timestamp": time.time(),
-            },
-        }
-
-    async def describe(self) -> dict[str, DataKey]:
-        return {
-            self.name: {
-                "dtype": "number",
-                "shape": [],
-                "source": self.dae.good_uah.source,
-                "precision": 6,
-            },
-            self.name + "-up": {
-                "dtype": "number",
-                "shape": [],
-                "source": self.dae.good_uah.source,
-            },
-            self.name + "-down": {
-                "dtype": "number",
-                "shape": [],
-                "source": self.dae.good_uah.source,
-            },
-        }
-
-    @property
-    def hints(self) -> Hints:
-        return {"fields": [self.name]}
+        await asyncio.gather(
+            self.up_run.set(up_run),
+            self.up.set(up_intensity),
+            self.down_run.set(down_run),
+            self.down.set(down_intensity),
+            self.polarization.set(
+                (up_intensity - down_intensity) / (up_intensity + down_intensity),
+            ),
+        )
 
 
 def pol_scan(block_name: str, *, start: float, stop: float, num: int):

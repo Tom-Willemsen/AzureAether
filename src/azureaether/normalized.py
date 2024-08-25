@@ -41,4 +41,4 @@ if __name__ == "__main__":
     from ibex_bluesky_core.run_engine import get_run_engine
 
     RE = get_run_engine()
-    RE(plan(), LiveTable(["mot", "DAE", "norm_counts"]))
+    RE(plan(), LiveTable(["mot", "norm_counts"]))

@@ -58,12 +58,12 @@ def plan():
             spectra = await asyncio.gather(*(spec.y.get_value() for spec in self.spec.values()))
 
             # Run normalization in a separate thread so that we don't block the main event loop
-            # if it takes a while.
+            # if it takes a while (scipp will release the GIL during long-running ops).
             val, err = await asyncio.to_thread(self._normalize, spectra)
 
             await asyncio.gather(
-                self.val.set(val, wait=True, timeout=None),
-                self.err.set(err, wait=True, timeout=None),
+                self.val.set(val),
+                self.err.set(err),
             )
 
         def _normalize(self, values):
